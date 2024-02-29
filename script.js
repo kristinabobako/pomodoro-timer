@@ -1,110 +1,83 @@
-const pomodoroOptions = document.querySelector('.pomodoro-options');
-const elemOptions = pomodoroOptions.querySelectorAll('.btn');
+const timer = document.querySelector('#pomodoro-time');
 
 const btnPomodoro = document.querySelector('#pomodoro');
 const btnBreak = document.querySelector('#break');
 const btnStart = document.querySelector('#start');
 const btnReset = document.querySelector('#reset');
 
-const timer = document.querySelector('#pomodoro-time');
-let min = timer.textContent.slice(0, 2);
-let sec = timer.textContent.slice(3, 5);
-let timerId;
-let pauseTimer = false;
+let timerMode = 'pomodoro';
+let isStarted = false;
+let timerId = 0;
 
-pomodoroOptions.addEventListener('click', (event) => {
-  let target = event.target;
+btnPomodoro.addEventListener('click', () => {
+  timerMode = 'pomodoro';
+  btnStart.textContent = 'start';
+  timer.textContent = '25:00';
+  btnPomodoro.classList.add('active');
+  btnBreak.classList.remove('active');
+  stopTimer();
+});
 
-  if (target.classList.contains('btn')) {
-    for (let i = 0; i < elemOptions.length; i++) {
-      elemOptions[i].classList.toggle('active');
-    }
-  }
+btnBreak.addEventListener('click', () => {
+  timerMode = 'break';
+  btnStart.textContent = 'start';
+  timer.textContent = '05:00';
+  btnBreak.classList.add('active');
+  btnPomodoro.classList.remove('active');
+  stopTimer();
 });
 
 btnStart.addEventListener('click', startTimer);
+btnReset.addEventListener('click', resetTimer);
 
-btnPomodoro.addEventListener('click', setInitialTimer);
-
-btnBreak.addEventListener('click', setInitialBreak);
-
-btnReset.addEventListener('click', function () {
-  if (btnPomodoro.classList.contains('active')) {
-    setInitialTimer()
-    clearInterval(timerId);
-  } else if (btnBreak.classList.contains('active')) {
-    setInitialBreak()
-  }
-});
-
-function setInitialTimer() {
-  timer.textContent = `${min}:${sec}`;
-  btnStart.textContent = 'start';
-  stopStartTimer()
-};
-
-function setInitialBreak() {
-  timer.textContent = '05:00';
-  btnStart.textContent = 'start';
-  stopStartTimer()
-};
-
-function stopStartTimer() {
-  clearInterval(timerId);
-  btnStart.addEventListener('click', startTimer);
-};
-
-function startTimer() {
-
-  btnStart.textContent = 'stop';
-  let duration;
-  if (btnPomodoro.classList.contains('active')) {
-    duration = (+parseInt(min) * 60) + (+parseInt(sec));
-  } else if (btnBreak.classList.contains('active')) {
-    duration = 5 * 60;
-  }
-
-  timerId = setInterval(() => {
-
-
-    if (!pauseTimer) {
-
-      let minutes = Math.floor(duration / 60);
-      let seconds = duration % 60;
-
-      if (seconds < 10) {
-        seconds = `0${seconds}`;
-      }
-
-      if (minutes < 10) {
-        minutes = `0${minutes}`;
-      }
-
-      timer.textContent = `${minutes}:${seconds}`;
-
-      duration--;
-
-      if (duration < 0) {
-        clearInterval(timerId);
-
-        setTimeout(() => {
-          btnStart.textContent = 'start';
-          timer.textContent = `${min}:${sec}`;
-        }, 1000);
-      }
-    }
-  }, 1000);
-  
-  btnStart.removeEventListener('click', startTimer);
-  btnStart.addEventListener('click', stopTimer);
+function resetTimer() {
+  if (timerMode === 'pomodoro') {
+    timer.textContent = '25:00';
+  } else {
+    timer.textContent = '05:00';
+  };
+  stopTimer();
 };
 
 function stopTimer() {
-  if (!pauseTimer) {
-    pauseTimer = true;
-    btnStart.textContent = 'start';
-  } else {
-    pauseTimer = false;
-    btnStart.textContent = 'stop';
-  }
+ isStarted = false;
+ clearInterval(timerId);
+ btnStart.textContent = 'start';
+};
+
+function startTimer() {
+  if (isStarted) {
+    stopTimer();
+    return;
+  };
+ 
+  let minutes = +timer.textContent.slice(0, 2);
+  let seconds = +timer.textContent.slice(3, 5);
+
+  timerId = setInterval(() => {
+    if (seconds > 0) {
+      seconds -= 1;
+    } else if (minutes > 0) {
+      minutes -= 1;
+      seconds = 59;
+    };
+
+    if (seconds >= 0 && minutes >= 0) {
+      timer.textContent = `${format(minutes)}:${format(seconds)}`;
+    };
+
+    if (!seconds && !minutes) {
+      resetTimer();
+    };
+  }, 1000);
+
+  btnStart.textContent = 'stop';
+  isStarted=!isStarted;
+};
+
+function format(val) {
+  if (val < 10) {
+    return `0${val}`;
+  };
+  return val;
 };
